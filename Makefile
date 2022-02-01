@@ -6,7 +6,7 @@ arch = $(word 2, $(subst /, ,$@))
 XSOCK := /tmp/.X11-unix/X0
 DISPLAY := :0
 
-version = v1.1.0
+version = v1.2.0
 
 # to run under WSL use: make DOCKER=/mnt/c/Progra~1/Docker/Docker/resources/bin/docker.exe <TARGET>
 DOCKER = $(shell which docker)

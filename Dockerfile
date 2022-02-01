@@ -1,6 +1,9 @@
 ARG PLATFORM=amd64
-FROM ${PLATFORM}/debian:stable-20190812-slim
+FROM ${PLATFORM}/ubuntu
 LABEL maintainer "Jefferson J. Hunt <jeffersonjhunt@gmail.com>"
+
+RUN useradd linuxcncuser
+
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -14,39 +17,34 @@ ENV LC_ALL=en_US.utf-8
 ENV LANGUAGE=en_US:en
 ENV PYTHONIOENCODING=utf-8
 
+
+
 # Install supporting apps needed to build/run
 RUN apt-get install -y \
       git \
-      build-essential \
-      pkg-config \
-      curl \
-      autogen \
-      autoconf \
-      python \
-      python-tk \
       libudev-dev \
       libmodbus-dev \
-      libusb-1.0-0-dev \
+      libusb-1.0-0-dev \ 
+      libgtk-3-dev \
       libgtk2.0-dev \
-      python-gtk2 \
-      procps \
-      kmod \
+      libepoxy-dev \
+      python3-yapps \
+      yapps2 \
       intltool \
+      libboost-python-dev \ 
       tcl8.6-dev \
-      tk8.6-dev \
+      tk8.6-dev \ 
       bwidget \
-      libtk-img \
-      tclx \
-      libreadline-gplv2-dev \
-      libboost-python-dev \
-      libglu1-mesa-dev \
-      libgl1-mesa-dev \
+      libtk-img \  
+      tclx \ 
+      libreadline-gplv2-dev \  
+      python3-opengl \ 
+      python3-tk \
+      libglu1-mesa-dev \ 
       libxmu-dev \
-      python-yapps \
-      yapps2 && \
-  curl -k https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
-  python /tmp/get-pip.py && \
-  pip install --upgrade pip
+      psmisc \ 
+      python3-pip && \
+      pip3 install --upgrade pip
 
 WORKDIR /opt
 
@@ -59,7 +57,20 @@ RUN git clone https://github.com/LinuxCNC/linuxcnc.git && \
   cd ../src && \
   ./autogen.sh && \
   ./configure --with-realtime=uspace && \
-  make
+  make -j10 && make setuid
+
+# Add Run time dependencies
+RUN apt-get install -y \ 
+    python3-pyqt5 \ 
+    python3-pyqt5-dbg \
+    python3-pyqt5.qtsvg \
+    python3-pyqt5.qtopengl \ 
+    python3-gi-cairo \
+    python3-pyqt5.qsci \
+    libcairo2 \
+    libcairo2-dev \
+    gir1.2-pango-1.0 \ 
+    python3-xlib 
 
 # Clean up APT when done.
 RUN apt-get purge -y \
@@ -76,9 +87,14 @@ RUN apt-get purge -y \
 
 # Add mgmt scripts
 COPY linuxcnc-entrypoint.sh /usr/local/bin/linuxcnc-entrypoint.sh
-RUN chmod +x /usr/local/bin/linuxcnc-entrypoint.sh
+RUN chmod 777 /usr/local/bin/linuxcnc-entrypoint.sh
 
 # Fire it up!
+RUN mkdir -p /home/linuxcncuser/linuxcnc
+RUN chmod 777 -R /home/linuxcncuser
+RUN chmod 777 -R /opt/linuxcnc/
+
+USER linuxcncuser
 ENTRYPOINT ["linuxcnc-entrypoint.sh"]
 CMD ["start"]
 
